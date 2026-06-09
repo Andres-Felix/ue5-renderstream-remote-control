@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UE5 RenderStream Remote Control</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1><i class="fas fa-cube"></i> UE5 Remote Control</h1>
+                    <p class="subtitle">RenderStream Control Panel</p>
+                </div>
+                <div class="header-right">
+                    <div class="connection-status">
+                        <div class="status-indicator offline" id="connectionStatus"></div>
+                        <span id="statusText">Disconnected</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h3>Projects</h3>
+                </div>
+                <div class="projects-list" id="projectsList">
+                    <!-- Projects loaded dynamically -->
+                </div>
+            </aside>
+
+            <!-- Control Panel -->
+            <main class="control-panel">
+                <div class="panel-header">
+                    <h2 id="projectTitle">Select a Project</h2>
+                </div>
+
+                <!-- Control Sections -->
+                <div class="controls-container">
+                    <!-- Lighting Controls -->
+                    <section class="control-section">
+                        <div class="section-header">
+                            <i class="fas fa-sun"></i>
+                            <h3>Lighting</h3>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-item">
+                                <label>Sun Rotation</label>
+                                <div class="slider-container">
+                                    <input type="range" id="sunRotation" min="-360" max="360" value="0" class="slider">
+                                    <span class="slider-value" id="sunRotationValue">0°</span>
+                                </div>
+                            </div>
+
+                            <div class="control-item">
+                                <label>Sun Intensity</label>
+                                <div class="slider-container">
+                                    <input type="range" id="sunIntensity" min="0" max="2" step="0.1" value="1" class="slider">
+                                    <span class="slider-value" id="sunIntensityValue">1.0</span>
+                                </div>
+                            </div>
+
+                            <div class="control-item">
+                                <label>Day Time (Hours)</label>
+                                <div class="slider-container">
+                                    <input type="range" id="dayTime" min="0" max="24" step="0.5" value="12" class="slider time-slider">
+                                    <span class="slider-value" id="dayTimeValue">12:00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Scene Management -->
+                    <section class="control-section">
+                        <div class="section-header">
+                            <i class="fas fa-film"></i>
+                            <h3>Scene</h3>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-item">
+                                <label>Current Scene</label>
+                                <select id="sceneSelector" class="select-control">
+                                    <option value="default">Default Scene</option>
+                                    <option value="studio">Studio</option>
+                                    <option value="outdoor">Outdoor</option>
+                                    <option value="night">Night</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Sun Position -->
+                    <section class="control-section">
+                        <div class="section-header">
+                            <i class="fas fa-location-dot"></i>
+                            <h3>Sun Position</h3>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-item">
+                                <label>X Position</label>
+                                <div class="slider-container">
+                                    <input type="range" id="sunX" min="-1000" max="1000" step="10" value="0" class="slider">
+                                    <span class="slider-value" id="sunXValue">0</span>
+                                </div>
+                            </div>
+
+                            <div class="control-item">
+                                <label>Y Position</label>
+                                <div class="slider-container">
+                                    <input type="range" id="sunY" min="-1000" max="1000" step="10" value="0" class="slider">
+                                    <span class="slider-value" id="sunYValue">0</span>
+                                </div>
+                            </div>
+
+                            <div class="control-item">
+                                <label>Z Position</label>
+                                <div class="slider-container">
+                                    <input type="range" id="sunZ" min="-1000" max="1000" step="10" value="0" class="slider">
+                                    <span class="slider-value" id="sunZValue">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Material Colors -->
+                    <section class="control-section">
+                        <div class="section-header">
+                            <i class="fas fa-palette"></i>
+                            <h3>Materials</h3>
+                        </div>
+                        <div class="control-group">
+                            <div class="material-controls" id="materialControls">
+                                <div class="control-item">
+                                    <label>Material 1</label>
+                                    <div class="color-picker-container">
+                                        <input type="color" value="#FF0000" class="color-picker" data-material="mat_1">
+                                        <span class="color-label">Red</span>
+                                    </div>
+                                </div>
+
+                                <div class="control-item">
+                                    <label>Material 2</label>
+                                    <div class="color-picker-container">
+                                        <input type="color" value="#00FF00" class="color-picker" data-material="mat_2">
+                                        <span class="color-label">Green</span>
+                                    </div>
+                                </div>
+
+                                <div class="control-item">
+                                    <label>Material 3</label>
+                                    <div class="color-picker-container">
+                                        <input type="color" value="#0000FF" class="color-picker" data-material="mat_3">
+                                        <span class="color-label">Blue</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Quick Actions -->
+                    <section class="control-section">
+                        <div class="section-header">
+                            <i class="fas fa-bolt"></i>
+                            <h3>Quick Actions</h3>
+                        </div>
+                        <div class="control-group buttons-grid">
+                            <button class="action-btn" id="resetBtn">
+                                <i class="fas fa-redo"></i>
+                                Reset
+                            </button>
+                            <button class="action-btn" id="sunriseBtn">
+                                <i class="fas fa-sun"></i>
+                                Sunrise
+                            </button>
+                            <button class="action-btn" id="sunsetBtn">
+                                <i class="fas fa-moon"></i>
+                                Sunset
+                            </button>
+                            <button class="action-btn" id="noonBtn">
+                                <i class="fas fa-sun"></i>
+                                Noon
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
