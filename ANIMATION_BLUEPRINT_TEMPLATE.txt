@@ -1,0 +1,409 @@
+// ===========================
+// UE5 Animation Blueprint Template
+// For Remote Control System
+// ===========================
+
+/*
+USAGE:
+1. In UE5 Content Browser, right-click → "Create Advanced Asset" → "Blueprint"
+2. Choose parent class: "AnimInstance"
+3. Name it: "ABP_RemoteControlAnimations"
+4. Replace the graph nodes with the following logic:
+
+ANIMATION BLUEPRINT EVENT GRAPH:
+================================
+*/
+
+// Event Blueprint Initialize Animation
+// ├─ Cast to BP_RemoteControl
+// ├─ Bind to OnDayTimeChanged
+// ├─ Bind to OnSunRotationChanged
+// ├─ Bind to OnSunIntensityChanged
+// ├─ Bind to OnSunPositionChanged
+// └─ Print String: "Animation Blueprint Initialized"
+
+// ===========================
+// Timeline for Time of Day
+// ===========================
+
+// Custom Event: UpdateTimeOfDay
+// Input: DayTime (Float, 0-24)
+// Implementation:
+// ├─ Convert Hours to Normalized Value (0-1)
+// │  └─ Divide DayTime by 24.0
+// ├─ Play Timeline "TimelineOfDay" from start
+// ├─ Set Timeline Value to Normalized DayTime
+// ├─ Update Lighting
+// │  ├─ Switch on DayTime
+// │  ├─ Case 0-6 (Night): Set Sky Light Color to Dark Blue
+// │  ├─ Case 6-12 (Morning): Lerp to Bright Colors
+// │  ├─ Case 12-18 (Afternoon): Maintain Bright
+// │  ├─ Case 18-24 (Evening): Lerp to Warm Colors
+// │  └─ Default: Night
+// └─ Update Fog Color
+//    ├─ Get Exponential Height Fog
+//    └─ Set Fog Inscattering Color based on time
+
+// ===========================
+// Timeline for Sun Rotation
+// ===========================
+
+// Custom Event: RotateSun
+// Input: TargetRotation (Float)
+// Implementation:
+// ├─ Get Current Sun Rotation
+// ├─ Calculate Rotation Delta
+// ├─ Create Rotation Timeline
+// │  ├─ Start Value: Current Rotation
+// │  ├─ End Value: Target Rotation
+// │  ├─ Duration: 1.0 seconds (smooth transition)
+// │  └─ Interpolation: Linear
+// ├─ On Timeline Update
+// │  ├─ Get Directional Light
+// │  ├─ Set Light Rotation from Timeline Value
+// │  └─ Broadcast OnSunRotationUpdated
+// └─ On Timeline Finished
+//    └─ Print String: "Sun Rotation Animation Complete"
+
+// ===========================
+// Timeline for Sun Intensity
+// ===========================
+
+// Custom Event: UpdateSunIntensity
+// Input: TargetIntensity (Float, 0-2.0)
+// Implementation:
+// ├─ Get Current Sun Intensity
+// ├─ Create Intensity Timeline
+// │  ├─ Start Value: Current Intensity
+// │  ├─ End Value: Target Intensity
+// │  ├─ Duration: 0.5 seconds
+// │  └─ Interpolation: Ease In-Out
+// ├─ On Timeline Update
+// │  ├─ Get Directional Light
+// │  ├─ Set Light Intensity from Timeline Value
+// │  ├─ Update Exposure (for HDR)
+// │  └─ Update Sky Light Intensity (proportionally)
+// └─ On Timeline Finished
+//    └─ Set CurrentSunIntensity to TargetIntensity
+
+// ===========================
+// Timeline for Sun Position
+// ===========================
+
+// Custom Event: MoveSunPosition
+// Input: TargetPosition (Vector)
+// Implementation:
+// ├─ Get Current Sun Position
+// ├─ Create Position Timeline
+// │  ├─ Start Value: Current Position
+// │  ├─ End Value: Target Position
+// │  ├─ Duration: 0.75 seconds
+// │  └─ Interpolation: Ease In-Out
+// ├─ On Timeline Update
+// │  ├─ Get Directional Light Actor
+// │  ├─ Set Actor Location from Timeline Value
+// │  └─ Update Shadow Cascade
+// └─ On Timeline Finished
+//    └─ Set CurrentSunPosition to TargetPosition
+
+// ===========================
+// Material Animation
+// ===========================
+
+// Custom Event: AnimateMaterialColor
+// Input: 
+//   - TargetActor (Actor)
+//   - TargetColor (Linear Color)
+//   - Duration (Float)
+// Implementation:
+// ├─ Get Static Mesh Component
+// ├─ Get All Material Instances
+// ├─ Create Color Timeline
+// │  ├─ Duration: Parameter Duration
+// │  └─ Interpolation: Linear
+// ├─ For Each Material:
+// │  ├─ Get Current Color
+// │  ├─ On Timeline Update
+// │  │  ├─ Lerp from Current to Target Color
+// │  │  └─ Set Vector Parameter "Param_BaseColor"
+// │  └─ On Timeline Finished
+// │     └─ Set Final Color
+// └─ Print String: "Material Animation Complete"
+
+// ===========================
+// Sky Color Animation by Time
+// ===========================
+
+// Custom Event: UpdateSkyColor
+// Input: DayTimeHours (Float, 0-24)
+// Implementation:
+/*
+    Define Color Palette:
+    
+    Night (00:00-05:59):        #001a4d (Dark Blue)
+    Sunrise (06:00-07:59):      #ff8c00 (Orange)
+    Morning (08:00-11:59):      #87ceeb (Light Blue)
+    Noon (12:00-14:59):         #00bfff (Sky Blue)
+    Afternoon (15:00-17:59):    #ffa500 (Golden)
+    Sunset (18:00-19:59):       #ff4500 (Dark Orange)
+    Dusk (20:00-23:59):         #1a1a2e (Purple Night)
+*/
+
+// ├─ Calculate Time Segment
+// │  └─ Modulo DayTimeHours by 24
+// ├─ Switch on Time Segment
+// ├─ Case 0-6 (Night): 
+// │  └─ Lerp to Dark Blue
+// ├─ Case 6-8 (Sunrise):
+// │  ├─ Duration: 2 hours
+// │  └─ Lerp from Dark Blue → Orange → Light Blue
+// ├─ Case 8-12 (Morning):
+// │  └─ Maintain Light Blue
+// ├─ Case 12-15 (Noon):
+// │  └─ Maintain Sky Blue
+// ├─ Case 15-18 (Afternoon):
+// │  ├─ Duration: 3 hours
+// │  └─ Lerp from Sky Blue → Orange → Golden
+// ├─ Case 18-20 (Sunset):
+// │  ├─ Duration: 2 hours
+// │  └─ Lerp from Dark Orange → Purple
+// ├─ Case 20-24 (Night):
+// │  └─ Maintain Purple Night
+// └─ Apply Color to:
+//    ├─ Sky Sphere Material
+//    ├─ Sky Light Color
+//    └─ Fog Color
+
+// ===========================
+// Quick Action Animations
+// ===========================
+
+// Custom Event: PlayQuickAction
+// Input: ActionName (String)
+// Implementation:
+// ├─ Switch on ActionName
+// ├─ Case "sunrise":
+// │  ├─ Play Timeline "SunriseFade"
+// │  │  ├─ Duration: 3.0 seconds
+// │  │  ├─ Sky Color: Dark → Orange → Light
+// │  │  └─ Sun Intensity: Low → High
+// │  └─ Set Day Time to 6.0
+// ├─ Case "sunset":
+// │  ├─ Play Timeline "SunsetFade"
+// │  │  ├─ Duration: 3.0 seconds
+// │  │  ├─ Sky Color: Light → Orange → Dark
+// │  │  └─ Sun Intensity: High → Low
+// │  └─ Set Day Time to 18.0
+// ├─ Case "noon":
+// │  ├─ Play Timeline "NoonFlash"
+// │  │  ├─ Duration: 1.0 second
+// │  │  └─ Sky Brightness: Increase → Decrease
+// │  └─ Set Day Time to 12.0
+// ├─ Case "reset":
+// │  ├─ Reset all timelines
+// │  ├─ Set all values to defaults
+// │  ├─ Duration: 2.0 seconds
+// │  └─ Fade to neutral state
+// └─ Print String: "Quick Action: {ActionName}"
+
+// ===========================
+// Exposure Control
+// ===========================
+
+// Custom Event: UpdateExposure
+// Input: TargetExposure (Float)
+// Implementation:
+// ├─ Get Camera Actor
+// ├─ Get Post Process Volume
+// ├─ Create Exposure Timeline
+// │  ├─ Start Value: Current Exposure
+// │  ├─ End Value: Target Exposure
+// │  ├─ Duration: 0.5 seconds
+// │  └─ Interpolation: Ease In-Out
+// ├─ On Timeline Update
+// │  ├─ Get Camera Component
+// │  ├─ Set Exposure Compensation from Timeline
+// │  └─ Update Post Process Exposure
+// └─ On Timeline Finished
+//    └─ Set Current Exposure
+
+// ===========================
+// Anim Notifies for Events
+// ===========================
+
+// Anim Notify: AnimNotify_SunriseStarted
+// ├─ Print String: "Sunrise Animation Started"
+// ├─ Enable all sunrise-specific effects
+// └─ Broadcast OnSunriseStarted
+
+// Anim Notify: AnimNotify_SunsetStarted
+// ├─ Print String: "Sunset Animation Started"
+// ├─ Enable all sunset-specific effects
+// └─ Broadcast OnSunsetStarted
+
+// ===========================
+// Blueprint Variables
+// ===========================
+
+/*
+Add these variables to your Animation Blueprint:
+
+1. CurrentDayTime (Float)
+   - Default: 12.0
+   - Category: "State"
+
+2. CurrentSunRotation (Float)
+   - Default: 0.0
+   - Category: "State"
+
+3. CurrentSunIntensity (Float)
+   - Default: 1.0
+   - Category: "State"
+
+4. CurrentSunPosition (Vector)
+   - Default: (0, 0, 0)
+   - Category: "State"
+
+5. DirectionalLightActor (Actor)
+   - Category: "References"
+   - Instance Editable: True
+
+6. SkyLightActor (Actor)
+   - Category: "References"
+   - Instance Editable: True
+
+7. SkyPhereMaterial (Material Instance Dynamic)
+   - Category: "References"
+
+8. ExponentialHeightFogActor (Actor)
+   - Category: "References"
+   - Instance Editable: True
+
+9. AnimationDuration (Float)
+   - Default: 1.0
+   - Category: "Settings"
+
+10. TransitionSmoothing (Easing) 
+    - Default: EaseInOut
+    - Category: "Settings"
+*/
+
+// ===========================
+// Example Timeline Curves
+// ===========================
+
+/*
+SUNRISE TIMELINE (0-3 seconds):
+├─ Sky Color:
+│  ├─ T=0.0s: Dark Blue (RGB: 0, 26, 77)
+│  ├─ T=1.0s: Orange (RGB: 255, 140, 0)
+│  ├─ T=2.0s: Light Blue (RGB: 135, 206, 235)
+│  └─ T=3.0s: Bright Blue (RGB: 0, 191, 255)
+└─ Sun Intensity:
+   ├─ T=0.0s: 0.5
+   ├─ T=1.5s: 1.0
+   └─ T=3.0s: 1.8
+
+SUNSET TIMELINE (0-3 seconds):
+├─ Sky Color:
+│  ├─ T=0.0s: Bright Blue (RGB: 0, 191, 255)
+│  ├─ T=1.0s: Golden (RGB: 255, 165, 0)
+│  ├─ T=2.0s: Dark Orange (RGB: 255, 69, 0)
+│  └─ T=3.0s: Dark Blue (RGB: 26, 26, 46)
+└─ Sun Intensity:
+   ├─ T=0.0s: 1.8
+   ├─ T=1.5s: 1.0
+   └─ T=3.0s: 0.5
+
+NOON FLASH TIMELINE (0-1 second):
+├─ Brightness:
+│  ├─ T=0.0s: 1.0
+│  ├─ T=0.3s: 1.2 (peak)
+│  └─ T=1.0s: 1.0
+└─ Exposure:
+   ├─ T=0.0s: 0.0
+   ├─ T=0.3s: 0.5 (peak)
+   └─ T=1.0s: 0.0
+*/
+
+// ===========================
+// Performance Optimization
+// ===========================
+
+/*
+BEST PRACTICES:
+
+1. Use Timelines for smooth transitions instead of instant changes
+2. Clamp all values to prevent invalid states
+3. Cache actor references in BeginPlay
+4. Use Material Instances instead of Materials for faster updates
+5. Throttle updates during high performance scenarios
+6. Use Distance Culling for far objects
+7. Pre-cache frequently used Components
+8. Profile with Unreal Insights for bottlenecks
+
+OPTIMIZATION TIPS:
+
+- Reduce Timeline curve points for faster evaluation
+- Use lower precision for color values when possible
+- Batch material updates together
+- Use LODs for distant objects
+- Disable animations when out of viewport
+- Use async tasks for heavy calculations
+- Monitor GPU time in Stat Unit
+*/
+
+// ===========================
+// Testing & Debugging
+// ===========================
+
+/*
+ADD DEBUG NODES:
+
+1. Print Current State:
+   - Print String "DayTime: {CurrentDayTime}"
+   - Print String "Sun Intensity: {CurrentSunIntensity}"
+   - Print String "Sun Rotation: {CurrentSunRotation}"
+
+2. Draw Debug Helpers:
+   - Draw Debug Point at Sun Position
+   - Draw Debug Line from Light to Scene
+   - Draw Debug Sphere around controllable objects
+
+3. Monitor Performance:
+   - Print String with Frame Time
+   - Log memory usage
+   - Check timeline playback rate
+
+4. Test All Commands:
+   - Test each slider individually
+   - Test quick actions
+   - Test material color changes
+   - Test scene transitions
+*/
+
+// ===========================
+// Integration with Remote Control
+// ===========================
+
+/*
+SETUP FLOW:
+
+1. BP_RemoteControl broadcasts OnDayTimeChanged
+   ↓
+2. Animation Blueprint receives event
+   ↓
+3. Custom Event "UpdateTimeOfDay" fires
+   ↓
+4. Timeline begins playing
+   ↓
+5. Each frame updates lighting/sky/fog
+   ↓
+6. Timeline finishes with smooth transition
+   ↓
+7. Game world reflects the new time
+
+SIMILAR FLOW FOR ALL OTHER CONTROLS
+*/
+
+// End of Animation Blueprint Template
